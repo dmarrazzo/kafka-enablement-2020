@@ -1,12 +1,12 @@
-apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaMirrorMaker2
+apiVersion: kafka.strimzi.io/v1beta2
 metadata:
-  name: my-mirror-maker-2
+  name: mm2-europe
   namespace: kafka-europe
   labels:
-    app: my-mirror-maker-2
+    app: mm2-europe
 spec:
-  version: 2.5.0
+  version: 3.5.0
   replicas: 1
   connectCluster: "europe"
   clusters:
