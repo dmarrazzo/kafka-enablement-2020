@@ -176,7 +176,7 @@ oc apply -f 23-application-active-us.yaml
 show the consumer logs:
 
 ```sh
-oc logs -f -l app=kafka-consumer-active -n kafka-u
+oc logs -f -l app=kafka-consumer -n kafka-us
 ```
 
 from another terminal:

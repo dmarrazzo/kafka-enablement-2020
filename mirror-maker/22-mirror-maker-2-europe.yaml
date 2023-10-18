@@ -29,6 +29,7 @@ spec:
         offset-syncs.topic.replication.factor: 1
         sync.topic.acls.enabled: "false"
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+        offset.lag.max: 0
     heartbeatConnector:
       autoRestart:
         enabled: true
