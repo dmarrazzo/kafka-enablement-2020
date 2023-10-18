@@ -1,0 +1,54 @@
+kind: KafkaMirrorMaker2
+apiVersion: kafka.strimzi.io/v1beta2
+metadata:
+  name: mm2-europe
+  namespace: kafka-europe
+  labels:
+    app: mm2-europe
+spec:
+  version: 3.5.0
+  replicas: 1
+  connectCluster: "europe"
+  clusters:
+  - alias: "europe"
+    bootstrapServers: europe-kafka-bootstrap.kafka-europe.svc:9092
+    config:
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
+  - alias: "us"
+    bootstrapServers: us-kafka-bootstrap.kafka-us.svc:9092
+  mirrors:
+  - sourceCluster: "us"
+    targetCluster: "europe"
+    sourceConnector:
+      autoRestart:
+        enabled: true
+      config:
+        replication.factor: 1
+        offset-syncs.topic.replication.factor: 1
+        sync.topic.acls.enabled: "false"
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+    heartbeatConnector:
+      autoRestart:
+        enabled: true
+      config:
+        heartbeats.topic.replication.factor: 1
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+    checkpointConnector:
+      autoRestart:
+        enabled: true
+      config:
+        checkpoints.topic.replication.factor: 1
+        emit.checkpoints.interval.seconds: 5
+        sync.group.offsets.enabled: "true"
+        sync.group.offsets.interval.seconds: 5
+        refresh.groups.interval.seconds: 10
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+    topicsPattern: ".*"
+    groupsPattern: ".*"
+  resources:
+    requests:
+      memory: 1Gi
+    limits:
+      memory: 1Gi

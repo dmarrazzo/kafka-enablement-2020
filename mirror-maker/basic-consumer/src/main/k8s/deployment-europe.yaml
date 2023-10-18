@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: basic-consumer
+    app.kubernetes.io/component: basic-consumer
+    app.kubernetes.io/instance: basic-consumer
+  name: basic-consumer
+  namespace: kafka-europe
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      deployment: basic-consumer
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        deployment: basic-consumer
+    spec:
+      containers:
+      - env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: europe-kafka-bootstrap:9092
+        - name: KAFKA_GROUP_ID
+          value: basic-consumer
+        - name: TOPIC_PATTERN
+          value: .*topic-us-active
+        image: quay.io/dmarrazz/basic-consumer
+        imagePullPolicy: IfNotPresent
+        name: basic-consumer
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

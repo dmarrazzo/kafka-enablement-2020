@@ -148,7 +148,7 @@ public class Consumer {
 
         while (true)
         {
-            ConsumerRecords<String, String> records = consumer.poll(timeout);
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(timeout));
 
             if(records.isEmpty()) {
                 LOG.info("No message in topic for {} seconds. Finishing ...", timeout/1000);

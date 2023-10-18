@@ -146,6 +146,58 @@ oc extract -n kafka-us secret/us-cluster-ca-cert --keys=ca.p12 --to=- > cluster-
 oc extract -n kafka-us secret/us-cluster-ca-cert --keys=ca.password --to=-
 ```
 
+## Active Passive configuration
+
+Delete all:
+
+```sh
+oc delete project kafka-us
+oc delete project kafka-europe
+```
+
+Create project:
+
+```sh
+oc new-project kafka-us
+oc new-project kafka-europe
+```
+
+```sh
+oc apply -f 20-kafka-europe.yaml
+oc apply -f 21-kafka-us.yaml
+oc apply -f 22-mirror-maker-2-europe.yaml
+oc apply -f 23-application-active-us.yaml
+```
+
+show the consumer logs:
+
+```sh
+oc logs -f -l app=kafka-consumer-active -n kafka-u
+```
+
+from another terminal:
+
+```sh
+oc scale deployment kafka-consumer-active --replicas=0 -n kafka-us
+```
+
+Optionally stop the producer:
+
+```sh
+oc scale deployment/kafka-producer-active --replicas=0 -n kafka-us
+```
+
+Deploy the consumer on the europe side:
+
+```sh
+oc apply -f 24-application-active-europe.yaml 
+```
+
+```sh
+oc logs -f -l app=kafka-consumer-passive -n kafka-europe
+```
+
+
 ## Challenges
 
 * Secret management for authentication, encryption etc.

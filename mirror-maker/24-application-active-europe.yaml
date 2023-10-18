@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kafka-consumer
+  name: kafka-consumer
+  namespace: kafka-europe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-consumer
+  template:
+    metadata:
+      labels:
+        app: kafka-consumer
+    spec:
+      containers:
+      - name: kafka-consumer
+        image: quay.io/kafka-enablement-2020/kafka-consumer:latest
+        env:
+          - name: BOOTSTRAP_SERVERS
+            value: europe-kafka-bootstrap:9092
+          - name: PATTERN
+            value: ".*topic-us-active"
+          - name: GROUP_ID
+            value: activepassive-consumer
