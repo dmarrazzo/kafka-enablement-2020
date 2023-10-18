@@ -151,8 +151,7 @@ oc extract -n kafka-us secret/us-cluster-ca-cert --keys=ca.password --to=-
 Delete all:
 
 ```sh
-oc delete project kafka-us
-oc delete project kafka-europe
+oc delete project kafka-us kafka-europe
 ```
 
 Create project:
@@ -165,6 +164,11 @@ oc new-project kafka-europe
 ```sh
 oc apply -f 20-kafka-europe.yaml
 oc apply -f 21-kafka-us.yaml
+```
+
+When kafka is up and running
+
+```sh
 oc apply -f 22-mirror-maker-2-europe.yaml
 oc apply -f 23-application-active-us.yaml
 ```
