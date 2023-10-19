@@ -60,30 +60,6 @@ oc apply -f 02-kafka-europe.yaml -n kafka-europe
 oc apply -f 03-kafka-us.yaml -n kafka-us
 ```
 
-## Mirror Maker 1
-
-### Application
-
-* Each cluster will have its own applications sending and receiving messages.
-Notice how they create the topics for both regions and how they produce only into their own.
-
-```sh
-oc apply -f 04-application-europe.yaml -n kafka-europe
-oc apply -f 05-application-us.yaml -n kafka-us
-```
-
-### Mirroring
-
-* Next, we can deploy Mirror Maker and see how it mirrors the messages.
-We deploy it in the way that it produces locally and consumes remotely to minimize duplicates.
-
-```sh
-oc apply -f 06-mirror-maker-1-europe.yaml -n kafka-europe
-oc apply -f 07-mirror-maker-1-us.yaml -n kafka-us
-```
-
-* Wait until it starts mirroring and notice that it is using the same topic as was on the original cluster.
-
 ## Mirror Maker 2
 
 * Before you start, delete the Mirror Maker 1 deployment:
@@ -115,7 +91,78 @@ oc apply -f 11-mirror-maker-2-us.yaml -n kafka-us
 
 * Wait until it starts mirroring and notice that it is automatically changing the topic names.
 
-## Offset recovery
+## Active Passive configuration
+
+Delete the previous projects:
+
+```sh
+oc delete project kafka-us kafka-europe
+```
+
+Wait few seconds to make sure that is was removed and create them again:
+
+```sh
+oc new-project kafka-us
+oc new-project kafka-europe
+```
+
+Create the Kafka clusters:
+
+```sh
+oc apply -f 20-kafka-europe.yaml
+oc apply -f 21-kafka-us.yaml
+```
+
+When Kafka is up and running, create the application for the US site and the mirror maker for the european site:
+
+```sh
+oc apply -f 22-application-active-us.yaml
+oc apply -f 23-mirror-maker-2-europe.yaml
+```
+Wait until the MirrorMaker 2 is ready, then show the consumer logs:
+
+```sh
+oc logs -f -l app=kafka-consumer -n kafka-us
+```
+
+From another terminal, simulate the site failure scaling down the consumer:
+
+```sh
+oc scale deployment kafka-consumer --replicas=0 -n kafka-us
+```
+
+Wait a few seconds and scale down also the producer, in such a way, it simulate the existence of messages not consumed on topic.
+
+```sh
+oc scale deployment/kafka-producer --replicas=0 -n kafka-us
+```
+
+Deploy the consumer on the europe side:
+
+```sh
+oc apply -f 24-application-active-europe.yaml 
+```
+On the other terminal be ready to show the consumer logs:
+
+```sh
+oc logs -f -l app=kafka-consumer -n kafka-europe
+```
+
+Compare the offset number from the consumer log on the US side (the failing one) and the one on the European side (the failing over one): you should notice that they are strictly consecutive.
+
+This behavior is somewhat unnatural, since offset synchronization is generally designed to lag.
+For demo purposes, a fast and tight synchronization was set by the following properties:
+
+```yaml
+        sync.group.offsets.interval.seconds: 5
+        offset.lag.max: 0
+```
+
+## Offset recovery alternative approach
+
+Previously, Mirror Maker 2 used to mirror the remote offset but it was not able to update the consumer group offset topic (`__consumer_offsets`).
+So it was a client burden to reconcile the remote offset with the local offset using the `RemoteClusterUtils` class.
+Nowadays, this approach still works and you can leave `sync.group.offsets.enabled` set to false.
 
 * Download the public key of the European cluster:
 
@@ -145,62 +192,6 @@ oc extract -n kafka-us secret/us-cluster-ca-cert --keys=ca.p12 --to=- > cluster-
 ```sh
 oc extract -n kafka-us secret/us-cluster-ca-cert --keys=ca.password --to=-
 ```
-
-## Active Passive configuration
-
-Delete all:
-
-```sh
-oc delete project kafka-us kafka-europe
-```
-
-Create project:
-
-```sh
-oc new-project kafka-us
-oc new-project kafka-europe
-```
-
-```sh
-oc apply -f 20-kafka-europe.yaml
-oc apply -f 21-kafka-us.yaml
-```
-
-When kafka is up and running
-
-```sh
-oc apply -f 22-mirror-maker-2-europe.yaml
-oc apply -f 23-application-active-us.yaml
-```
-
-show the consumer logs:
-
-```sh
-oc logs -f -l app=kafka-consumer -n kafka-us
-```
-
-from another terminal:
-
-```sh
-oc scale deployment kafka-consumer-active --replicas=0 -n kafka-us
-```
-
-Optionally stop the producer:
-
-```sh
-oc scale deployment/kafka-producer-active --replicas=0 -n kafka-us
-```
-
-Deploy the consumer on the europe side:
-
-```sh
-oc apply -f 24-application-active-europe.yaml 
-```
-
-```sh
-oc logs -f -l app=kafka-consumer-passive -n kafka-europe
-```
-
 
 ## Challenges
 
