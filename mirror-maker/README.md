@@ -62,13 +62,6 @@ oc apply -f 03-kafka-us.yaml -n kafka-us
 
 ## Mirror Maker 2
 
-* Before you start, delete the Mirror Maker 1 deployment:
-
-```sh
-oc delete kmm my-mirror-maker-1 -n kafka-europe
-oc delete kmm my-mirror-maker-1 -n kafka-us
-```
-
 ### Application
 
 * Each cluster will have its own applications sending and receiving messages.
